@@ -1,8 +1,9 @@
 """
 Current Provider: AnimeVerse
-Subject to always change this submodule will keep getting updated
+Can change if this provider stops working
 
 Will always implement three functions:
+    init_provider() -> None // For any preproceesing needed for the api
     search(query: str) -> list[Anime]
     get_anime(anime_id: int) -> Anime | None
     get_streams(anime_id: int, episode_id: int) -> list[Stream]
@@ -11,11 +12,17 @@ Will always implement three functions:
 import base64
 import hashlib
 import hmac
+import json
+import re
 import time
+from datetime import datetime
+from urllib.parse import quote
 
 import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from rapidfuzz import fuzz, process
 
-from internal.provider.model import Anime, Stream
+from internal.provider.model import Anime, EpisodeData, Stream
 
 CF_CLEARANCE = "6WDMjSrrOEQTNgRayFJ_oekpZVQVAYaXBQ0gwFdDoPk-1780445682-1.2.1.1-bwgbTjF20QAWTUHjrvs9g5SFc.dqwBxFerppbwHzWHUzAy59XB0ya0g.o0CU0dMFalUMu3qSUm.xTS3nsU9eBmS1ptZ0ziJDY_Ut4q670IvQLRVh1PKnIRupPVzUP5NNvvCwFsCu_PjzBtLHW_yavxUxzYOAI.Ob3pglzAx3u6cLAmQ.JM3QtPxeb3lvJwQtU2V8CKm7J9t9mGaCgt0F7iriNBPh3GKicplDLGCdLxSeSkGW4dbh_oweu4V_EJbNAdjucPFCPmfICECn6iB4Q43SYFC1OV_tugkO7U3yZbnpr3f7ZR21H2LiufdJ5DK7RIgt8O6zvEz8zgrjEu2CdQ"
 SIG_BYTES = 16
@@ -71,13 +78,121 @@ async def fetch(path: str) -> dict:
         return resp.json()
 
 
+def normalize(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
+
+
+async def init_provider(scheduler: AsyncIOScheduler) -> None:
+    async def fetch_animeverse_catalog() -> None:
+        # url = "/api/v1/catalog"
+        # try:
+        #     response = await fetch(url)
+        #     global animeverse_catalog
+        #     animeverse_catalog = {}
+
+        #     for item in response["items"]:
+        #         animeverse_catalog[item["id"]] = item["slug"]
+
+        #     print(f"Animeverse catalog updated at {datetime.now()}")
+
+        # except Exception as e:
+        #     print(f"Error fetching animeverse catalog: {e}")
+
+        # Test mode
+        with open("public/animeverse_catalog.json", "r") as f:
+            data = json.load(f)["items"]
+            global SEARCH_INDEX, SEARCH_CHOICES
+            SEARCH_INDEX = data
+            SEARCH_CHOICES = [normalize(item.get("searchTitle", "")) for item in data]
+
+    await fetch_animeverse_catalog()
+    scheduler.add_job(fetch_animeverse_catalog, "interval", hours=6)
+
+
 async def search(query: str) -> list[Anime]:
-    return []
+    query = normalize(query)
+
+    matches = process.extract(
+        query,
+        SEARCH_CHOICES,
+        scorer=fuzz.token_set_ratio,
+        limit=20,
+        score_cutoff=60,
+    )
+
+    results = []
+    for match in matches:
+        anime = SEARCH_INDEX[match[2]]
+        poster_url = f"https://animeverse.to{anime.get('thumb', '')}"
+        banner_url = f"https://animeverse.to{anime.get('cover', '')}"
+
+        results.append(
+            Anime(
+                id=anime.get("slug", ""),
+                title=anime.get("alternativeTitle", "") or anime.get("title", ""),
+                poster=f"http://127.0.0.1:8000/proxy/image?url={quote(poster_url)}",
+                banner=f"http://127.0.0.1:8000/proxy/image?url={quote(banner_url)}",
+                genres=anime.get("genres", []),
+                rating=anime.get("rating", 0.0),
+                start_date=str(anime.get("year", "")),
+                episodes=[],
+            )
+        )
+
+    return results
 
 
-async def get_anime(anime_id: int) -> Anime | None:
-    return None
+async def get_anime(anime_id: str) -> Anime | None:
+    url = f"/api/v1/anime/{anime_id}"
+    try:
+        response = await fetch(url)
+        catalog_data = [item for item in SEARCH_INDEX if item["slug"] == anime_id][0]
+
+        poster_url = f"https://animeverse.to{response.get('thumb', '')}"
+        banner_url = f"https://animeverse.to{response.get('cover', '')}"
+
+        episodes = []
+        episodes_data = response.get("episodes", [])
+        for episode in episodes_data:
+            episodes.append(
+                EpisodeData(
+                    id=episode.get("id"),
+                    number=episode.get("number"),
+                    title=episode.get("title", f"Episode {episode.get('number')}"),
+                )
+            )
+
+        return Anime(
+            id=anime_id,
+            mal_id=response.get("malId"),
+            title=catalog_data.get("alternativeTitle")
+            or response.get("title", "Unknown"),
+            description=response.get("synopsis"),
+            episodes=episodes,
+            start_date=response.get("start_date"),
+            genres=catalog_data.get("genres"),
+            poster=f"http://127.0.0.1:8000/proxy/image?url={quote(poster_url)}",
+            banner=f"http://127.0.0.1:8000/proxy/image?url={quote(banner_url)}",
+            rating=response.get("rating"),
+        )
+
+    except httpx.HTTPStatusError:
+        return None
 
 
-async def get_streams(anime_id: int, episode_id: int) -> list[Stream]:
-    return []
+async def get_streams(anime_id: str, episode_id: str) -> list[Stream]:
+    url = f"/api/v1/anime/{anime_id}/stream/{episode_id}"
+    try:
+        response = await fetch(url)
+        return [
+            Stream(
+                url=response.get("stream", ""),
+                name="AnilistStream AnimeVerse Sub",
+                type="sub",
+                headers=None,
+            )
+        ]
+    except httpx.HTTPStatusError:
+        return []

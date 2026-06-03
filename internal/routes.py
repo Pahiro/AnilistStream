@@ -1,4 +1,8 @@
+from urllib.parse import unquote
+
+import httpx
 from fastapi import FastAPI
+from fastapi.responses import Response
 
 import internal.stremio as stremio
 
@@ -26,12 +30,19 @@ def init_routes(app: FastAPI):
 
     @app.get("/catalog/{type}/{id}/{extra}.json")
     async def catalog(type: str, id: str, extra: str):
-        return stremio.get_catalog(type, id, extra)
+        return await stremio.get_catalog(type, id, extra)
 
     @app.get("/meta/{type}/{id}.json")
     async def meta(type: str, id: str):
-        return stremio.get_meta(type, id)
+        return await stremio.get_meta(type, id)
 
     @app.get("/stream/{type}/{id}.json")
     async def stream(type: str, id: str):
-        return stremio.get_stream(type, id)
+        return await stremio.get_stream(type, id)
+
+    @app.get("/proxy/image")
+    async def proxy_image(url: str):
+        async with httpx.AsyncClient() as client:
+            r = await client.get(unquote(url))
+
+        return Response(content=r.content, media_type=r.headers.get("content-type"))

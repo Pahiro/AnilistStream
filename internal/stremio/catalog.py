@@ -3,11 +3,11 @@ from urllib.parse import unquote
 from internal.provider import search
 
 
-def get_catalog(type: str, id: str, extra: str):
+async def get_catalog(type: str, id: str, extra: str):
     extra = unquote(extra)
     query = extra.split("=")[-1]
 
-    anime_list = search(query)
+    anime_list = await search(query)
 
     metas = [
         {
@@ -18,7 +18,7 @@ def get_catalog(type: str, id: str, extra: str):
             "poster": anime.poster,
             "background": anime.banner,
             "description": anime.description,
-            # "releaseInfo" - later
+            "releaseInfo": anime.start_date,
             "imdbRating": anime.rating,
         }
         for anime in anime_list

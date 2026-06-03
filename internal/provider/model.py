@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 
 class EpisodeData(BaseModel):
-    number: int
+    id: str | None = None
+    number: int | None = None
     title: str | None = None
     thumbnail: str | None = None
     release_date: str | None = None
@@ -14,7 +15,7 @@ class Anime(BaseModel):
     mal_id: int | None = None
     title: str
     description: str | None = None
-    episodes: list[EpisodeData] | None = None
+    episodes: list[EpisodeData]
     start_date: str | None = None
     end_date: str | None = None
     genres: list[str] | None = None

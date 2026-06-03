@@ -1,5 +1,5 @@
 from fastapi.responses import FileResponse
 
 
-def manifest():
+def get_manifest():
     return FileResponse("public/manifest.json")

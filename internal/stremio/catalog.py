@@ -11,7 +11,7 @@ async def get_catalog(type: str, id: str, extra: str):
 
     metas = [
         {
-            "id": f"as:{anime.id}:{anime.anilist_id or 'null'}:{anime.mal_id or 'null'}",
+            "id": f"as:{anime.id}:{anime.anilist_id}:{anime.mal_id}",
             "type": "anime",
             "name": anime.title,
             "genres": anime.genres,

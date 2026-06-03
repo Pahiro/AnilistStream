@@ -30,14 +30,20 @@ def init_routes(app: FastAPI):
 
     @app.get("/catalog/{type}/{id}/{extra}.json")
     async def catalog(type: str, id: str, extra: str):
+        if not type == "anime" or not id == "as-search":
+            return Response(status_code=404)
         return await stremio.get_catalog(type, id, extra)
 
     @app.get("/meta/{type}/{id}.json")
     async def meta(type: str, id: str):
+        if not type == "anime" or not id.startswith("as:"):
+            return Response(status_code=404)
         return await stremio.get_meta(type, id)
 
     @app.get("/stream/{type}/{id}.json")
     async def stream(type: str, id: str):
+        if not type == "anime" or not id.startswith("as:"):
+            return Response(status_code=404)
         return await stremio.get_stream(type, id)
 
     @app.get("/proxy/image")

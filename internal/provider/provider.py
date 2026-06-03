@@ -15,7 +15,6 @@ import hmac
 import json
 import re
 import time
-from datetime import datetime
 from urllib.parse import quote
 
 import httpx
@@ -89,13 +88,17 @@ async def init_provider(scheduler: AsyncIOScheduler) -> None:
         # url = "/api/v1/catalog"
         # try:
         #     response = await fetch(url)
-        #     global animeverse_catalog
+        #     data = response["items"]
+
+        #     global SEARCH_INDEX, SEARCH_CHOICES
+        #     SEARCH_INDEX = data
+        #     SEARCH_CHOICES = [normalize(item.get("searchTitle", "")) for item in data]
         #     animeverse_catalog = {}
 
         #     for item in response["items"]:
         #         animeverse_catalog[item["id"]] = item["slug"]
 
-        #     print(f"Animeverse catalog updated at {datetime.now()}")
+        #     print(f"Animeverse catalog updated")
 
         # except Exception as e:
         #     print(f"Error fetching animeverse catalog: {e}")
@@ -189,7 +192,7 @@ async def get_streams(anime_id: str, episode_id: str) -> list[Stream]:
         return [
             Stream(
                 url=response.get("stream", ""),
-                name="AnilistStream AnimeVerse Sub",
+                name="AnimeVerse Sub",
                 type="sub",
                 headers=None,
             )

@@ -23,6 +23,7 @@ def init_routes(app: FastAPI, templates: Jinja2Templates):
         return response
 
     @app.get("/", response_class=HTMLResponse)
+    # @app.get("/{anilist_token}", response_class=HTMLResponse)
     async def root(request: Request):
         return templates.TemplateResponse(
             request=request,
@@ -31,7 +32,9 @@ def init_routes(app: FastAPI, templates: Jinja2Templates):
         )
 
     @app.get("/configure", response_class=HTMLResponse)
+    @app.get("/{anilist_token}/configure", response_class=HTMLResponse)
     @app.get("/configure.json", response_class=HTMLResponse)
+    @app.get("/{anilist_token}/configure.json", response_class=HTMLResponse)
     async def configure(request: Request):
         return templates.TemplateResponse(
             request=request,
@@ -43,32 +46,38 @@ def init_routes(app: FastAPI, templates: Jinja2Templates):
         )
 
     @app.get("/manifest.json")
+    @app.get("/{anilist_token}/manifest.json")
     async def manifest():
         return stremio.get_manifest()
 
     @app.get("/logo.png")
+    @app.get("/{anilist_token}/logo.png")
     async def logo():
         return FileResponse("public/logo.png")
 
     @app.get("/catalog/{type}/{id}/{extra}.json")
+    @app.get("/{anilist_token}/catalog/{type}/{id}/{extra}.json")
     async def catalog(type: str, id: str, extra: str):
         if not type == "anime" or not id == "as-search":
             return Response(status_code=404)
         return await stremio.get_catalog(type, id, extra)
 
     @app.get("/meta/{type}/{id}.json")
+    @app.get("/{anilist_token}/meta/{type}/{id}.json")
     async def meta(type: str, id: str):
         if not type == "anime" or not id.startswith("as:"):
             return Response(status_code=404)
         return await stremio.get_meta(type, id)
 
     @app.get("/stream/{type}/{id}.json")
-    async def stream(type: str, id: str):
+    @app.get("/{anilist_token}/stream/{type}/{id}.json")
+    async def stream(anilist_token: str, type: str, id: str):
         if not type == "anime" or not id.startswith("as:"):
             return Response(status_code=404)
-        return await stremio.get_stream(type, id)
+        return await stremio.get_stream(anilist_token, type, id)
 
     @app.get("/proxy/image")
+    @app.get("/{anilist_token}/proxy/image")
     async def proxy_image(url: str):
         async with httpx.AsyncClient() as client:
             r = await client.get(unquote(url))

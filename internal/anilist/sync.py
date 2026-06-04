@@ -25,9 +25,12 @@ async def get_anilist_id(mal_id: int | None) -> int | None:
 
 
 async def sync_anilist(
-    anilist_token: str, anilist_id: int | None, mal_id: int | None, episode_number: int
+    anilist_token: str | None,
+    anilist_id: int | None,
+    mal_id: int | None,
+    episode_number: int,
 ):
-    if anilist_id is None and mal_id is None:
+    if anilist_token is None or (anilist_id is None and mal_id is None):
         return
 
     if anilist_id is None:
@@ -36,21 +39,17 @@ async def sync_anilist(
             return
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        await client.post(
             ANILIST_URL,
             json={
                 "query": """
-                    mutation ($id: Int, $progress: Int) {
-                        SaveMediaListEntry(id: $id, progress: $progress) {
+                    mutation ($mediaId: Int, $progress: Int) {
+                        SaveMediaListEntry(mediaId: $mediaId, progress: $progress) {
                             id
                         }
                     }
                 """,
-                "variables": {"id": anilist_id, "progress": episode_number},
+                "variables": {"mediaId": anilist_id, "progress": episode_number},
             },
             headers={"Authorization": f"Bearer {anilist_token}"},
         )
-        print(response.status_code, response.text)
-        if response.status_code == 200:
-            data = response.json()
-            print(data)

@@ -15,7 +15,6 @@ import hmac
 import json
 import re
 import time
-from urllib.parse import quote
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -153,7 +152,7 @@ async def get_anime(anime_id: str) -> Anime | None:
     try:
         response = await fetch(url)
         catalog_data = [item for item in SEARCH_INDEX if item["slug"] == anime_id][0]
-
+        title = catalog_data.get("alternativeTitle") or response.get("title", "Unknown")
         poster_url = f"https://animeverse.to{response.get('thumb', '')}"
         banner_url = f"https://animeverse.to{response.get('cover', '')}"
 
@@ -171,8 +170,7 @@ async def get_anime(anime_id: str) -> Anime | None:
         return Anime(
             id=anime_id,
             mal_id=response.get("malId"),
-            title=catalog_data.get("alternativeTitle")
-            or response.get("title", "Unknown"),
+            title=title,
             description=response.get("synopsis"),
             episodes=episodes,
             start_date=response.get("start_date"),

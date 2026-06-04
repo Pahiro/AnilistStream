@@ -70,8 +70,13 @@ def init_routes(app: FastAPI, templates: Jinja2Templates):
         return await stremio.get_meta(type, id)
 
     @app.get("/stream/{type}/{id}.json")
+    async def stream_without_token(type: str, id: str):
+        if not type == "anime" or not id.startswith("as:"):
+            return Response(status_code=404)
+        return await stremio.get_stream(None, type, id)
+
     @app.get("/{anilist_token}/stream/{type}/{id}.json")
-    async def stream(anilist_token: str, type: str, id: str):
+    async def stream(anilist_token: str | None, type: str, id: str):
         if not type == "anime" or not id.startswith("as:"):
             return Response(status_code=404)
         return await stremio.get_stream(anilist_token, type, id)

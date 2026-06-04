@@ -22,6 +22,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from rapidfuzz import fuzz, process
 
 from internal.provider.model import Anime, EpisodeData, Stream
+from internal.util import proxy_image
 
 CF_CLEARANCE = "6WDMjSrrOEQTNgRayFJ_oekpZVQVAYaXBQ0gwFdDoPk-1780445682-1.2.1.1-bwgbTjF20QAWTUHjrvs9g5SFc.dqwBxFerppbwHzWHUzAy59XB0ya0g.o0CU0dMFalUMu3qSUm.xTS3nsU9eBmS1ptZ0ziJDY_Ut4q670IvQLRVh1PKnIRupPVzUP5NNvvCwFsCu_PjzBtLHW_yavxUxzYOAI.Ob3pglzAx3u6cLAmQ.JM3QtPxeb3lvJwQtU2V8CKm7J9t9mGaCgt0F7iriNBPh3GKicplDLGCdLxSeSkGW4dbh_oweu4V_EJbNAdjucPFCPmfICECn6iB4Q43SYFC1OV_tugkO7U3yZbnpr3f7ZR21H2LiufdJ5DK7RIgt8O6zvEz8zgrjEu2CdQ"
 SIG_BYTES = 16
@@ -135,8 +136,8 @@ async def search(query: str) -> list[Anime]:
             Anime(
                 id=anime.get("slug", ""),
                 title=anime.get("alternativeTitle", "") or anime.get("title", ""),
-                poster=f"http://127.0.0.1:8000/proxy/image?url={quote(poster_url)}",
-                banner=f"http://127.0.0.1:8000/proxy/image?url={quote(banner_url)}",
+                poster=proxy_image(poster_url),
+                banner=proxy_image(banner_url),
                 genres=anime.get("genres", []),
                 rating=anime.get("rating", 0.0),
                 start_date=str(anime.get("year", "")),
@@ -176,8 +177,8 @@ async def get_anime(anime_id: str) -> Anime | None:
             episodes=episodes,
             start_date=response.get("start_date"),
             genres=catalog_data.get("genres"),
-            poster=f"http://127.0.0.1:8000/proxy/image?url={quote(poster_url)}",
-            banner=f"http://127.0.0.1:8000/proxy/image?url={quote(banner_url)}",
+            poster=proxy_image(poster_url),
+            banner=proxy_image(banner_url),
             rating=response.get("rating"),
         )
 

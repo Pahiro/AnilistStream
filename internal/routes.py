@@ -1,8 +1,10 @@
+import os
 from urllib.parse import unquote
 
 import httpx
-from fastapi import FastAPI
-from fastapi.responses import Response
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.templating import Jinja2Templates
 
 import internal.stremio as stremio
 
@@ -12,7 +14,7 @@ headers = {
 }
 
 
-def init_routes(app: FastAPI):
+def init_routes(app: FastAPI, templates: Jinja2Templates):
     @app.middleware("http")
     async def add_cors_headers(request, call_next):
         response = await call_next(request)
@@ -20,13 +22,33 @@ def init_routes(app: FastAPI):
             response.headers[key] = value
         return response
 
-    @app.get("/")
-    async def root():
-        return {"message": "Hello World"}
+    @app.get("/", response_class=HTMLResponse)
+    async def root(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={"server_url": os.getenv("BASE_URL")},
+        )
+
+    @app.get("/configure", response_class=HTMLResponse)
+    @app.get("/configure.json", response_class=HTMLResponse)
+    async def configure(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="configure.html",
+            context={
+                "client_id": os.getenv("ANILIST_CLIENT_ID"),
+                "server_url": os.getenv("BASE_URL"),
+            },
+        )
 
     @app.get("/manifest.json")
     async def manifest():
         return stremio.get_manifest()
+
+    @app.get("/logo.png")
+    async def logo():
+        return FileResponse("public/logo.png")
 
     @app.get("/catalog/{type}/{id}/{extra}.json")
     async def catalog(type: str, id: str, extra: str):

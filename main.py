@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
 
 from internal.provider.provider import init_provider
 from internal.routes import init_routes
@@ -21,4 +22,5 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-init_routes(app)
+templates = Jinja2Templates(directory="templates")
+init_routes(app, templates)

@@ -31,7 +31,7 @@
   "name": "AnilistStream",
   "description": "Streaming anime and Anilist sync",
   "idPrefixes": ["as:"],
-  "logo": "https://aniliststream.edmit.in/logo.png",
+  "logo": "http://127.0.0.1:8000/logo.png",
   "behaviorHints": {
     "configurable": true,
     "configurationRequired": false

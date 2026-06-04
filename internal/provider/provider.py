@@ -85,30 +85,30 @@ def normalize(text: str) -> str:
 
 async def init_provider(scheduler: AsyncIOScheduler) -> None:
     async def fetch_animeverse_catalog() -> None:
-        # url = "/api/v1/catalog"
-        # try:
-        #     response = await fetch(url)
-        #     data = response["items"]
+        url = "/api/v1/catalog"
+        try:
+            response = await fetch(url)
+            data = response["items"]
 
-        #     global SEARCH_INDEX, SEARCH_CHOICES
-        #     SEARCH_INDEX = data
-        #     SEARCH_CHOICES = [normalize(item.get("searchTitle", "")) for item in data]
-        #     animeverse_catalog = {}
-
-        #     for item in response["items"]:
-        #         animeverse_catalog[item["id"]] = item["slug"]
-
-        #     print(f"Animeverse catalog updated")
-
-        # except Exception as e:
-        #     print(f"Error fetching animeverse catalog: {e}")
-
-        # Test mode
-        with open("public/animeverse_catalog.json", "r") as f:
-            data = json.load(f)["items"]
             global SEARCH_INDEX, SEARCH_CHOICES
             SEARCH_INDEX = data
             SEARCH_CHOICES = [normalize(item.get("searchTitle", "")) for item in data]
+            animeverse_catalog = {}
+
+            for item in response["items"]:
+                animeverse_catalog[item["id"]] = item["slug"]
+
+            print("Animeverse catalog updated")
+
+        except Exception as e:
+            print(f"Error fetching animeverse catalog: {e}")
+
+        # Test mode
+        # with open("public/animeverse_catalog.json", "r") as f:
+        #     data = json.load(f)["items"]
+        #     global SEARCH_INDEX, SEARCH_CHOICES
+        #     SEARCH_INDEX = data
+        #     SEARCH_CHOICES = [normalize(item.get("searchTitle", "")) for item in data]
 
     await fetch_animeverse_catalog()
     scheduler.add_job(fetch_animeverse_catalog, "interval", hours=6)

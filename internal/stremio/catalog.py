@@ -55,8 +55,17 @@ def entries_to_metas(entries: list[dict]) -> list[dict]:
 
 async def get_catalog(anilist_token: str | None, type: str, id: str, extra: str = ""):
     status = STATUS_BY_CATALOG.get(id)
-    if status is None or not anilist_token:
+    if status is None:
+        return {"metas": []}
+    if not anilist_token:
+        print(f"catalog {id}: no token in request -> empty")
         return {"metas": []}
 
-    entries = await get_list(status, anilist_token)
+    try:
+        entries = await get_list(status, anilist_token)
+    except Exception as e:
+        print(f"catalog {id}: failed to fetch AniList list: {e}")
+        return {"metas": []}
+
+    print(f"catalog {id}: {len(entries)} entries from AniList")
     return {"metas": entries_to_metas(entries)}

@@ -136,13 +136,17 @@
 
             <div id="token-state" class="hidden">
                 <div class="token-box">
-                    <p class="description">Connected AniList token</p>
-                    <code id="token-display"></code>
+                    <p class="description">
+                        Manifest URL — paste into Stremio → Add-ons search box
+                    </p>
+                    <code id="manifest-url"></code>
                 </div>
 
-                <button id="installBtn" class="install-btn">
-                    Install in Stremio
-                </button>
+                <button id="copyBtn" class="install-btn">Copy manifest URL</button>
+                <a id="appBtn" class="install-btn" href="#">Install in Stremio app</a>
+                <a id="webBtn" class="configure-btn" target="_blank" rel="noopener" href="#">
+                    Install in Stremio Web
+                </a>
             </div>
 
             <a href="/" class="configure-btn"> ← Back to Home </a>
@@ -155,8 +159,6 @@
 
             const loginState = document.getElementById("login-state");
             const tokenState = document.getElementById("token-state");
-            const tokenDisplay = document.getElementById("token-display");
-            const installBtn = document.getElementById("installBtn");
 
             let token = null;
 
@@ -177,45 +179,30 @@
                 token = sessionStorage.getItem("anilist_token");
             }
 
-            function isLocal(url) {
-                return (
-                    url.includes("localhost") ||
-                    url.includes("127.0.0.1") ||
-                    /:\d+/.test(url) ||
-                    url.startsWith("http://")
-                );
-            }
-
             if (token) {
                 loginState.classList.add("hidden");
                 tokenState.classList.remove("hidden");
 
-                tokenDisplay.textContent =
-                    token.slice(0, 6) + "••••••••••••" + token.slice(-4);
+                const clean = serverUrl.replace(/^https?:\/\//, "");
+                const manifest =
+                    serverUrl + "/" + encodeURIComponent(token) + "/manifest.json";
 
-                installBtn.onclick = async () => {
-                    const manifest =
-                        serverUrl +
-                        "/" +
-                        encodeURIComponent(token) +
-                        "/manifest.json";
+                document.getElementById("manifest-url").textContent = manifest;
+                document.getElementById("appBtn").href =
+                    `stremio://${clean}/${encodeURIComponent(token)}/manifest.json`;
+                document.getElementById("webBtn").href =
+                    `https://web.stremio.com/#/addons?addon=${encodeURIComponent(manifest)}`;
 
-                    if (isLocal(serverUrl)) {
-                        try {
-                            await navigator.clipboard.writeText(manifest);
-
-                            installBtn.innerText = "Copied!";
-
-                            setTimeout(() => {
-                                installBtn.innerText = "Install in Stremio";
-                            }, 2000);
-                        } catch {
-                            alert(manifest);
-                        }
-                    } else {
-                        const clean = serverUrl.replace(/^https?:\/\//, "");
-
-                        window.location.href = `stremio://${clean}/${encodeURIComponent(token)}/manifest.json`;
+                const copyBtn = document.getElementById("copyBtn");
+                copyBtn.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(manifest);
+                        copyBtn.innerText = "Copied!";
+                        setTimeout(() => {
+                            copyBtn.innerText = "Copy manifest URL";
+                        }, 2000);
+                    } catch {
+                        alert(manifest);
                     }
                 };
             }

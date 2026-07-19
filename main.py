@@ -6,17 +6,24 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
-from internal.provider.provider import init_provider
+from internal.anilist import load_mapping
 from internal.routes import init_routes
 
 load_dotenv()
-scheduler = AsyncIOScheduler()
+
+
+async def _refresh_mapping() -> None:
+    try:
+        await load_mapping()
+    except Exception as e:  # keep serving even if the dataset is unreachable
+        print(f"Error loading anime mapping: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = AsyncIOScheduler()
-    await init_provider(scheduler)
+    await _refresh_mapping()
+    scheduler.add_job(_refresh_mapping, "interval", hours=24)
     scheduler.start()
     yield
     scheduler.shutdown()

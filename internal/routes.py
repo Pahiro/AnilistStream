@@ -55,29 +55,31 @@ def init_routes(app: FastAPI, templates: Jinja2Templates):
     async def logo():
         return FileResponse("public/logo.png")
 
+    CATALOG_IDS = {"anilist-current", "anilist-planning"}
+
+    # Browsable catalogs (no `extra` segment) and the paginated/extra form.
+    @app.get("/catalog/{type}/{id}.json")
+    @app.get("/{anilist_token}/catalog/{type}/{id}.json")
     @app.get("/catalog/{type}/{id}/{extra}.json")
     @app.get("/{anilist_token}/catalog/{type}/{id}/{extra}.json")
-    async def catalog(type: str, id: str, extra: str):
-        if not type == "anime" or not id == "as-search":
+    async def catalog(
+        type: str, id: str, extra: str = "", anilist_token: str | None = None
+    ):
+        if id not in CATALOG_IDS:
             return Response(status_code=404)
-        return await stremio.get_catalog(type, id, extra)
+        return await stremio.get_catalog(anilist_token, type, id, extra)
 
     @app.get("/meta/{type}/{id}.json")
     @app.get("/{anilist_token}/meta/{type}/{id}.json")
-    async def meta(type: str, id: str):
-        if not type == "anime" or not id.startswith("as:"):
+    async def meta(type: str, id: str, anilist_token: str | None = None):
+        if not id.startswith("anilist:"):
             return Response(status_code=404)
         return await stremio.get_meta(type, id)
 
     @app.get("/stream/{type}/{id}.json")
-    async def stream_without_token(type: str, id: str):
-        if not type == "anime" or not id.startswith("as:"):
-            return Response(status_code=404)
-        return await stremio.get_stream(None, type, id)
-
     @app.get("/{anilist_token}/stream/{type}/{id}.json")
-    async def stream(anilist_token: str | None, type: str, id: str):
-        if not type == "anime" or not id.startswith("as:"):
+    async def stream(type: str, id: str, anilist_token: str | None = None):
+        if not (id.startswith("tt") or id.startswith("anilist:")):
             return Response(status_code=404)
         return await stremio.get_stream(anilist_token, type, id)
 

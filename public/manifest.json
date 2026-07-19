@@ -1,50 +1,38 @@
 {
-  "id": "community.AnilistStream",
-  "version": "3.0.0",
+  "id": "community.anilist.lists",
+  "version": "4.0.0",
+  "name": "AniList Lists",
+  "description": "Browse your AniList Currently Watching and Plan to Watch lists in Stremio, and sync your watch progress back to AniList as you watch (via your existing stream sources).",
+  "logo": "https://anime.vdgryp.co.za/logo.png",
   "catalogs": [
     {
-      "type": "anime",
-      "id": "as-search",
-      "name": "Anime",
-      "extra": [
-        {
-          "name": "search",
-          "isRequired": true
-        }
-      ]
+      "type": "series",
+      "id": "anilist-current",
+      "name": "AniList — Currently Watching"
+    },
+    {
+      "type": "series",
+      "id": "anilist-planning",
+      "name": "AniList — Plan to Watch"
     }
   ],
   "resources": [
     "catalog",
     {
       "name": "meta",
-      "types": ["anime"],
-      "idPrefixes": ["as:"]
+      "types": ["series"],
+      "idPrefixes": ["anilist:"]
     },
     {
       "name": "stream",
-      "types": ["anime"],
-      "idPrefixes": ["as:"]
+      "types": ["series", "movie"],
+      "idPrefixes": ["tt", "anilist:"]
     }
   ],
-  "types": ["anime"],
-  "name": "AnilistStream",
-  "description": "Streaming anime and Anilist sync",
-  "idPrefixes": ["as:"],
-  "logo": "https://aniliststream.edmit.in/logo.png",
+  "types": ["series", "movie"],
+  "idPrefixes": ["tt", "anilist:"],
   "behaviorHints": {
     "configurable": true,
     "configurationRequired": false
-  },
-  "config": [
-    {
-      "key": "anilist_access_token",
-      "type": "text",
-      "required": true
-    }
-  ],
-  "stremioAddonsConfig": {
-    "issuer": "https://stremio-addons.net",
-    "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..gQGcTjfG_NCmlDNgy_Vxrg.CO-kPziGGJd0Yx4CF_h-K81eU5Yq4tgAKH1fyG6mwK06BnUUl7ERlq7ydTOLOXhM8uRKGTU2dVp-KrOqv1Yw6iSWZOmyv1MEFoR1R5qIw3FYhGtJpAGV0O5i4IfOqe9X.3AfKZViUDVGttkQEjzLvQQ"
   }
 }
